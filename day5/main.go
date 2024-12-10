@@ -1,15 +1,36 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
 )
 
-func loadPuzzle(filepath string) (rules [][]int, updateList []int) {
+func loadPuzzle(filepath string) (rules [][]string, updateList [][]string) {
+    file, err := os.OpenFile(filepath, os.O_RDONLY, os.ModePerm)
+    if err != nil {
+        panic("Cannot open puzzle file!")
+    }
+    
+    sc := bufio.NewScanner(file)
+    readRule := true
+    for sc.Scan() {
+        line := sc.Text()
+        if line == "" {
+            readRule = false
+        }
 
-
+        if readRule {
+            rules = append(rules, strings.Split(line, "|"))
+        } else {
+            if(len(line) > 0) {
+                updateList = append(updateList, strings.Split(line, ","))
+            }
+        }
+    }
     return
 }
 
@@ -84,6 +105,8 @@ func Qualified(list []string, rule []string) bool {
 }
 
 func SumMiddle(qualifiedList [][]string) int {
+    // fmt.Println("Calculate SumMiddle...")
+    // fmt.Println(qualifiedList)
     result := 0
 
     for _, list := range qualifiedList {
@@ -102,18 +125,16 @@ func main() {
     inputList := [][]string{}
     qualifiedList := [][]string{}
 
-    // rules, updateList = loadPuzzle("./input.txt")
-    rules, inputList = loadExample()
+    rules, inputList = loadPuzzle("./input.txt")
+    // rules, inputList = loadExample()
 
     for _, list := range inputList {
-        fmt.Println("Next list > %v", list)
+        // fmt.Println("Next list > %v", list)
         goodList := true
-        // markList := make([]string, len(list))
-        // copy(markList, list)
 
         for _, rule := range rules {
             if ruleSetNotInUpdateList(list, rule) {
-                fmt.Printf("Rule not in the list : %v\n", rule)
+                // fmt.Printf("Rule not in the list : %v\n", rule)
                 continue
             } else {
                 if Qualified(list, rule) {
@@ -122,7 +143,7 @@ func main() {
                 } else {
                     // if at least one of rule set false 
                     // perhaps, mark this list as bad list
-                    fmt.Printf("Not qualified !!! %v\n", list)
+                    // fmt.Printf("Not qualified !!! %v\n", list)
                     goodList = false
                     break
                 }
@@ -131,8 +152,8 @@ func main() {
 
         // all rules are verified
         // add this list into the qualified list
-        if goodList {
-            fmt.Printf("%v is qualified\n", list)
+        if goodList && len(list) > 0 {
+            // fmt.Printf("%v is qualified\n", list)
             qualifiedList = append(qualifiedList, list)
         }
     }
@@ -140,6 +161,7 @@ func main() {
     result := SumMiddle(qualifiedList)
 
     // fmt.Printf("%v\n", rules)
+    // fmt.Printf("%v\n", inputList)
     fmt.Printf("\n--------------\n")
     fmt.Printf("%v\n", qualifiedList)
     fmt.Println(result)
