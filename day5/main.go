@@ -75,7 +75,7 @@ func loadExample() (rules [][]string, updateList [][]string){
     return
 }
 
-func ruleSetNotInUpdateList(list []string, rule []string) bool {
+func ruleSetNotInTheList(list []string, rule []string) bool {
     for _, r := range rule {
         if !slices.Contains(list, r) {
             return true 
@@ -104,12 +104,12 @@ func Qualified(list []string, rule []string) bool {
     }
 }
 
-func SumMiddle(qualifiedList [][]string) int {
+func SumMiddle(allList [][]string) int {
     // fmt.Println("Calculate SumMiddle...")
     // fmt.Println(qualifiedList)
     result := 0
 
-    for _, list := range qualifiedList {
+    for _, list := range allList {
         middleIndex := (len(list) - 1) / 2
         middleValue, err := strconv.Atoi(list[middleIndex])
         if err != nil {
@@ -120,10 +120,52 @@ func SumMiddle(qualifiedList [][]string) int {
     return result
 }
 
+func sortOutOrderInList(list []string, rules [][]string) []string {
+    iX := 0
+    iY := 0
+    for _, rule := range rules {
+        if ruleSetNotInTheList(list, rule) { continue }
+        if Qualified(list, rule) { continue }
+
+        for i, v := range list {
+            if v == rule[0] {
+                iX = i
+            }
+            if v == rule[1] {
+                iY = i
+            }
+
+            if iX > iY {
+                // swap
+                list[iX] = rule[1]
+                list[iY] = rule[0]
+                // fmt.Printf("--> %v |  %v\n", rule, list)
+                return sortOutOrderInList(list, rules) 
+            }
+        }
+    }
+    return list
+}
+
+func reBuildBadList(badLists [][]string, rules [][]string) [][]string {
+    result := [][]string{}
+    aaa := []string{}
+
+    for _, list := range badLists {
+        fmt.Println(list)
+        aaa = sortOutOrderInList(list, rules)
+        result = append(result, aaa)
+    }
+
+    return result
+}
+
 func main() {
     rules := [][]string{}
     inputList := [][]string{}
     qualifiedList := [][]string{}
+    badList := [][]string{}
+    fixedList := [][]string{}
 
     rules, inputList = loadPuzzle("./input.txt")
     // rules, inputList = loadExample()
@@ -133,20 +175,14 @@ func main() {
         goodList := true
 
         for _, rule := range rules {
-            if ruleSetNotInUpdateList(list, rule) {
+            if ruleSetNotInTheList(list, rule) {
                 // fmt.Printf("Rule not in the list : %v\n", rule)
                 continue
-            } else {
-                if Qualified(list, rule) {
-                    // remove rule item from markList
-                    // Empty markList means the list is Good one
-                } else {
-                    // if at least one of rule set false 
-                    // perhaps, mark this list as bad list
-                    // fmt.Printf("Not qualified !!! %v\n", list)
-                    goodList = false
-                    break
-                }
+            }
+            if !Qualified(list, rule) {
+                badList = append(badList, list)
+                goodList = false
+                break
             }
         }
 
@@ -157,12 +193,17 @@ func main() {
             qualifiedList = append(qualifiedList, list)
         }
     }
-
     result := SumMiddle(qualifiedList)
+
+    fixedList = reBuildBadList(badList, rules)
+    result2 := SumMiddle(fixedList)
 
     // fmt.Printf("%v\n", rules)
     // fmt.Printf("%v\n", inputList)
     fmt.Printf("\n--------------\n")
-    fmt.Printf("%v\n", qualifiedList)
+    // fmt.Printf("%v\n", qualifiedList)
     fmt.Println(result)
+
+    // fmt.Printf("%v\n", fixedList)
+    fmt.Println(result2)
 }
